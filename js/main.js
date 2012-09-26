@@ -66,4 +66,17 @@
       $("input#fecha_destino").datepicker("show");
     });
   });
+
+  $("form#buscar").submit(function () {
+    var from = new Date($("input#fecha_origen").val());
+    from.setDate(from.getDate() - 2);
+    for (i = 0 ; i < 7 ; i++ , from.setDate(from.getDate() + 1) ) {
+      var to = new Date($("input#fecha_destino").val());
+      to.setDate(to.getDate() - 2);
+      for (j = 0 ; j < 7 ; j++ , to.setDate(to.getDate() + 1) ) {
+        console.log(from.toISOString().substr(0, 10) + "-" + to.toISOString().substr(0, 10));
+      }
+    }
+    return false;
+  });
 })(jQuery);
