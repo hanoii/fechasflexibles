@@ -53,5 +53,17 @@
         $( this ).removeClass( "ui-corner-top" ).addClass( "ui-corner-all" );
       }
     });
+
+    $("input.fecha").datepicker({
+      dateFormat: 'yy-mm-dd',
+      numberOfMonths: 2,
+      minDate: 0
+    });
+    $("input#fecha_origen").change(function() {
+      $("input#fecha_destino").datepicker("option", "minDate", this.value);
+    });
+    $("input#fecha_origen").datepicker("option", "onClose", function(dateText, inst) {
+      $("input#fecha_destino").datepicker("show");
+    });
   });
 })(jQuery);
