@@ -5,7 +5,7 @@
       source: function( request, response ) {
         function filter(data, term) {
           return $.map(data, function( item ) {
-            if (item.label.search(new RegExp(term, 'i')) != -1 || item.id.search(new RegExp(term3, 'i')) != -1) {
+            if (item.label.search(new RegExp(term, 'i')) != -1) {
               return item;
             }
           });
