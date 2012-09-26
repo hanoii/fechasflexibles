@@ -68,30 +68,46 @@
   });
 
   $("form#buscar").submit(function () {
+    function formatdate(date, format) {
+      if (format == 'short') {
+        var months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Deciembre"]
+        var month = parseInt(date.toISOString().substr(5, 2), 10);
+        var day = parseInt(date.toISOString().substr(8, 2), 10);
+        return months[month-1].substr(0, 3) + ' ' + day;
+      }
+      else {
+        return date.toISOString();
+      }
+    }
+
+    var days = 2;
+    var days_before =  Math.floor( days/2 );
+
+
     $('#resultado').html('');
     var to = new Date($("input#fecha_destino").val());
-    to.setDate(to.getDate() - 3);
-    for (i = 0 ; i < 7 ; i++ , to.setDate(to.getDate() + 1) ) {
+    to.setDate(to.getDate() - days_before);
+    for (i = 0 ; i < days ; i++ , to.setDate(to.getDate() + 1) ) {
       if (i == 0) {
         var from = new Date($("input#fecha_origen").val());
-        from.setDate(from.getDate() - 3);
+        from.setDate(from.getDate() - days_before);
         var row = $('<div class="row"></div>');
         var div = $('<div class="span1"><p align="right">Ir</p><p>Volver</p></div>');
         row.append(div);
-        for (j = 0 ; j < 7 ; j++ , from.setDate(from.getDate() + 1) ) {
+        for (j = 0 ; j < days ; j++ , from.setDate(from.getDate() + 1) ) {
           var div = $('<div class="span1"></div>');
-          div.text(date('M d', from));
+          div.text(formatdate(from, 'short'));
           row.append(div);
         }
         $('#resultado').append(row);
       }
       var from = new Date($("input#fecha_origen").val());
-      from.setDate(from.getDate() - 3);
+      from.setDate(from.getDate() - days_before);
       $('#resultado').append('<div class="row" id="' + to.toISOString().substr(0, 10) + '"></div>' );
       var div = $('<div class="span1"></div>');
-      div.text(date('M d', to));
+      div.text(formatdate(to, 'short'));
       $('#' + to.toISOString().substr(0, 10)).append(div);
-      for (j = 0 ; j < 7 ; j++ , from.setDate(from.getDate() + 1) ) {
+      for (j = 0 ; j < days ; j++ , from.setDate(from.getDate() + 1) ) {
         if (to >= from) {
           var div = $('<div class="span1" id="' + from.toISOString().substr(0, 10) + "-" + to.toISOString().substr(0, 10) + '"></div>');
           $('#' + to.toISOString().substr(0, 10)).append(div);
