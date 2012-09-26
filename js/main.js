@@ -5,7 +5,7 @@
       source: function( request, response ) {
         function filter(data, term) {
           return $.map(data, function( item ) {
-            if (item.label.search(new RegExp(term, 'i')) != -1) {
+            if (item.label.search(new RegExp(term.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'i')) != -1) {
               return item;
             }
           });
@@ -30,7 +30,7 @@
             }
             cache[ term3 ] = $.map( items, function( item ) {
               return {
-                label: item.n + "(" + item.m + ")",
+                label: item.n + " (" + item.m + ")",
                 //value: item.m,
                 id: item.m
               }
