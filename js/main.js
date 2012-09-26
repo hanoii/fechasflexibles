@@ -68,13 +68,39 @@
   });
 
   $("form#buscar").submit(function () {
-    var from = new Date($("input#fecha_origen").val());
-    from.setDate(from.getDate() - 2);
-    for (i = 0 ; i < 7 ; i++ , from.setDate(from.getDate() + 1) ) {
-      var to = new Date($("input#fecha_destino").val());
-      to.setDate(to.getDate() - 2);
-      for (j = 0 ; j < 7 ; j++ , to.setDate(to.getDate() + 1) ) {
-        console.log(from.toISOString().substr(0, 10) + "-" + to.toISOString().substr(0, 10));
+    $('#resultado').html('');
+    var to = new Date($("input#fecha_destino").val());
+    to.setDate(to.getDate() - 3);
+    for (i = 0 ; i < 7 ; i++ , to.setDate(to.getDate() + 1) ) {
+      if (i == 0) {
+        var from = new Date($("input#fecha_origen").val());
+        from.setDate(from.getDate() - 3);
+        var row = $('<div class="row"></div>');
+        var div = $('<div class="span1"><p align="right">Ir</p><p>Volver</p></div>');
+        row.append(div);
+        for (j = 0 ; j < 7 ; j++ , from.setDate(from.getDate() + 1) ) {
+          var div = $('<div class="span1"></div>');
+          div.text(date('M d', from));
+          row.append(div);
+        }
+        $('#resultado').append(row);
+      }
+      var from = new Date($("input#fecha_origen").val());
+      from.setDate(from.getDate() - 3);
+      $('#resultado').append('<div class="row" id="' + to.toISOString().substr(0, 10) + '"></div>' );
+      var div = $('<div class="span1"></div>');
+      div.text(date('M d', to));
+      $('#' + to.toISOString().substr(0, 10)).append(div);
+      for (j = 0 ; j < 7 ; j++ , from.setDate(from.getDate() + 1) ) {
+        if (to >= from) {
+          var div = $('<div class="span1" id="' + from.toISOString().substr(0, 10) + "-" + to.toISOString().substr(0, 10) + '"></div>');
+          $('#' + to.toISOString().substr(0, 10)).append(div);
+          console.log(from.toISOString().substr(0, 10) + "-" + to.toISOString().substr(0, 10));
+        }
+        else {
+          var div = $('<div class="span1" id="' + from.toISOString().substr(0, 10) + "-" + to.toISOString().substr(0, 10) + '">X</div>');
+          $('#' + to.toISOString().substr(0, 10)).append(div);
+        }
       }
     }
     return false;
