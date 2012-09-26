@@ -80,11 +80,11 @@
       }
     }
 
-    var days = 2;
+    var days = 10;
     var days_before =  Math.floor( days/2 );
 
-
     $('#resultado').html('');
+
     var to = new Date($("input#fecha_destino").val());
     to.setDate(to.getDate() - days_before);
     for (i = 0 ; i < days ; i++ , to.setDate(to.getDate() + 1) ) {
@@ -109,7 +109,8 @@
       $('#' + to.toISOString().substr(0, 10)).append(div);
       for (j = 0 ; j < days ; j++ , from.setDate(from.getDate() + 1) ) {
         if (to >= from) {
-          var div = $('<div class="span1" id="' + from.toISOString().substr(0, 10) + "-" + to.toISOString().substr(0, 10) + '"></div>');
+          var div = $('<div class="span1" id="' + from.toISOString().substr(0, 10) + "-" + to.toISOString().substr(0, 10) + '">&nbsp;</div>');
+          div.addClass('ui-autocomplete-loading');
           $('#' + to.toISOString().substr(0, 10)).append(div);
           console.log(from.toISOString().substr(0, 10) + "-" + to.toISOString().substr(0, 10));
         }
