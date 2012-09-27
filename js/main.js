@@ -2,23 +2,40 @@
   $(document).ready(function() {
     var cache = {};
     $("input#origen,input#destino").autocomplete({
-      source: function( request, response ) {        
+      source: function( request, response ) {
+        function filter(data, term) {
+          return $.map(data, function( item ) {
+            if (item.label.search(new RegExp(term.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'i')) != -1) {
+              return item;
+            }
+          });
+        }
         var term = request.term;
-        if ( term in cache ) {
-          response( cache[ term ] );
+        var term3 = request.term.substr(0, 3);
+        if ( term3 in cache ) {
+          response( filter(cache[ term3 ], term) );
           return;
         }
         $.ajax({
-          url: "http://api.despegar.com/autocomplete/cities/" + term,
+          url: "http://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20json%20where%20url%20%3D%20'http%3A%2F%2Fwww.despegar.com.ar%2FFlights.Services%2FCommons%2FAutoComplete.svc%2Fes%2F" + term3 + "'&format=json",
           dataType: "jsonp",
           success: function( data ) {
-            cache[ term ] = $.map( data.autocomplete, function( item ) {
+            var items = [];
+            if (data.query.count == 0) return response();
+            if (!$.isArray(data.query.results.json.json)) {
+              items.push(data.query.results.json);
+            }
+            else {
+              items = data.query.results.json.json;
+            }
+            cache[ term3 ] = $.map( items, function( item ) {
               return {
-                label: item.name + " (" + item.id + ")",
-                id: item.id
+                label: item.n + " (" + item.m + ")",
+                //value: item.m,
+                id: item.m
               }
             });
-            response( cache[ term ] );
+            response( filter(cache[ term3 ], term) );
           }
         });
       },
