@@ -2,40 +2,23 @@
   $(document).ready(function() {
     var cache = {};
     $("input#origen,input#destino").autocomplete({
-      source: function( request, response ) {
-        function filter(data, term) {
-          return $.map(data, function( item ) {
-            if (item.label.search(new RegExp(term.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'i')) != -1) {
-              return item;
-            }
-          });
-        }
+      source: function( request, response ) {        
         var term = request.term;
-        var term3 = request.term.substr(0, 3);
-        if ( term3 in cache ) {
-          response( filter(cache[ term3 ], term) );
+        if ( term in cache ) {
+          response( cache[ term ] );
           return;
         }
         $.ajax({
-          url: "http://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20json%20where%20url%20%3D%20'http%3A%2F%2Fwww.despegar.com.ar%2FFlights.Services%2FCommons%2FAutoComplete.svc%2Fes%2F" + term3 + "'&format=json",
+          url: "http://api.despegar.com/autocomplete/cities/" + term,
           dataType: "jsonp",
           success: function( data ) {
-            var items = [];
-            if (data.query.count == 0) return response();
-            if (!$.isArray(data.query.results.json.json)) {
-              items.push(data.query.results.json);
-            }
-            else {
-              items = data.query.results.json.json;
-            }
-            cache[ term3 ] = $.map( items, function( item ) {
+            cache[ term ] = $.map( data.autocomplete, function( item ) {
               return {
-                label: item.n + " (" + item.m + ")",
-                //value: item.m,
-                id: item.m
+                label: item.name + " (" + item.id + ")",
+                id: item.id
               }
             });
-            response( filter(cache[ term3 ], term) );
+            response( cache[ term ] );
           }
         });
       },
@@ -44,6 +27,12 @@
         if( ui.item ) {
           $(this).val(ui.item.label);
           $('#' + $(this).attr('id') + '_id').val(ui.item.id);
+        }
+        if ( $( this ).attr('id') == 'origen' ) {
+          $('#destino').focus();
+        }
+        else {
+          $('#fecha_origen').focus();
         }
       },
       open: function() {
@@ -75,12 +64,15 @@
         var day = parseInt(date.toISOString().substr(8, 2), 10);
         return months[month-1].substr(0, 3) + ' ' + day;
       }
+      else if (format == 'date') {
+        return date.toISOString().substr( 0, 10 );
+      }
       else {
         return date.toISOString();
       }
     }
 
-    var days = 10;
+    var days = 1;
     var days_before =  Math.floor( days/2 );
 
     $('#resultado').html('');
@@ -112,6 +104,16 @@
           var div = $('<div class="span1" id="' + from.toISOString().substr(0, 10) + "-" + to.toISOString().substr(0, 10) + '">&nbsp;</div>');
           div.addClass('ui-autocomplete-loading');
           $('#' + to.toISOString().substr(0, 10)).append(div);
+          var url = "http://www.despegar.com.ar/shop/flights/data/search/roundtrip/" + $("#origen_id").val() + "/" + $("#destino_id").val() + "/" + formatdate(from, 'date') + "/" + formatdate(to, 'date') + "/1/0/0/FARE/ASCENDING/NA/NA/NA/NA/NA";
+          console.log("http://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20json%20where%20url%3D'" + encodeURIComponent(url) + "'&format=json");
+          $.ajax({
+            url: "http://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20json%20where%20url%3D'" + encodeURIComponent(url) + "'&format=json",
+            dataType: "jsonp",
+            success: function( data ) {
+              console.log(data);
+              div.removeClass('ui-autocomplete-loading');
+            }
+          });
           console.log(from.toISOString().substr(0, 10) + "-" + to.toISOString().substr(0, 10));
         }
         else {
