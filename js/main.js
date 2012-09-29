@@ -134,7 +134,7 @@
         var div = $('<div class="span1"><p align="right">Ir</p><p>Volver</p></div>');
         row.append(div);
         for (j = 0 ; j < days ; j++ , from.setDate(from.getDate() + 1) ) {
-          var div = $('<div class="span1"></div>');
+          var div = $('<div class="span1 result"></div>');
           div.text(date_short(from));
           row.append(div);
         }
@@ -143,12 +143,12 @@
       var from = new Date($("input#fecha_origen").val());
       from.setDate(from.getDate() - days_before);
       $('#resultado').append('<div class="row" id="' + to.toISOString().substr(0, 10) + '"></div>' );
-      var div = $('<div class="span1"></div>');
+      var div = $('<div class="span1 result"></div>');
       div.text(date_short(to));
       $('#' + to.toISOString().substr(0, 10)).append(div);
       for (j = 0 ; j < days ; j++ , from.setDate(from.getDate() + 1) ) {
         if (to >= from) {
-          var div = $('<div class="span1" id="' + date_range(from, to) + '">&nbsp;</div>');
+          var div = $('<div class="span1 result" id="' + date_range(from, to) + '">&nbsp;</div>');
           div.addClass('ui-autocomplete-loading');
           $('#' + date_date(to)).append(div);
           function getFlightsDespegar(from, to, retry) {
@@ -166,12 +166,23 @@
                   getFlightsDespegar(from, to, retry);
                 }
                 else {
+                  var link_url = "http://www.despegar.com.ar/shop/flights/results/roundtrip/" + $("#origen_id").val() + "/" + $("#destino_id").val() + "/" + this.from_str + "/" + this.to_str + "/1/0/0";
+
                   if (data.query.count == 0) {
-                    $('#' + this.from_str + '-' + this.to_str).removeClass('ui-autocomplete-loading').html( 'Error' );
+                    $('#' + this.from_str + '-' + this.to_str).removeClass('ui-autocomplete-loading').html('<a target="_blank" href="' + link_url + '">Error</a>' );
                     return;
                   }
-                  
-                  var link_url = "http://www.despegar.com.ar/shop/flights/results/roundtrip/" + $("#origen_id").val() + "/" + $("#destino_id").val() + "/" + this.from_str + "/" + this.to_str + "/1/0/0";
+
+                  if (!isset(data.query.results.json.result.metadata)) {
+                    $('#' + this.from_str + '-' + this.to_str).removeClass('ui-autocomplete-loading').html( '' );
+                    return;
+                  }
+
+                  if (data.query.results.json.result.metadata.status.code != "SUCCEEDED" && data.query.results.json.result.metadata.status.code != "SUCCEEDED_RELAXED") {
+                    $('#' + this.from_str + '-' + this.to_str).removeClass('ui-autocomplete-loading').html( '-' );
+                    return;
+                  }
+
                   $('#' + this.from_str + '-' + this.to_str).removeClass('ui-autocomplete-loading').html('<a target="_blank" href="' + link_url + '">' + data.query.results.json.result.pricesSummary.bestPrice[0].formatted.mask + ' ' + data.query.results.json.result.pricesSummary.bestPrice[0].formatted.amount + '<br/>' + data.query.results.json.result.pricesSummary.bestPrice[1].formatted.mask + ' ' + data.query.results.json.result.pricesSummary.bestPrice[1].formatted.amount + '</a>' );
                 }
               }
@@ -193,8 +204,10 @@
                   getFlightsAeroMexico(from, to, retry);
                 }
                 else {
+                  var link_url = "http://ar.aeromexico.com/search/flights/RoundTrip/" + $("#origen_id").val() + "/" + $("#destino_id").val() + "/" + this.from_str + "/" + this.to_str + "/1/0/0";
+
                   if (data.query.count == 0) {
-                    $('#' + this.from_str + '-' + this.to_str).removeClass('ui-autocomplete-loading').html( 'Error' );
+                    $('#' + this.from_str + '-' + this.to_str).removeClass('ui-autocomplete-loading').html('<a target="_blank" href="' + link_url + '">Error</a>' );
                     return;
                   }
 
@@ -203,8 +216,6 @@
                     return;
                   }
                   
-                  var link_url = "http://ar.aeromexico.com/search/flights/RoundTrip/" + $("#origen_id").val() + "/" + $("#destino_id").val() + "/" + this.from_str + "/" + this.to_str + "/1/0/0";
-
                   if ($.isArray(data.query.results.json.Boxs)) {
                     price = data.query.results.json.Boxs[0];
                   }
