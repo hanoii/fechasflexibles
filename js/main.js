@@ -63,7 +63,7 @@
     $("input.fecha").datepicker({
       dateFormat: 'yy-mm-dd',
       numberOfMonths: 2,
-      minDate: 0
+      minDate: 1
     });
     $("input#fecha_origen").change(function() {
       $("input#fecha_destino").datepicker("option", "minDate", this.value);
@@ -74,22 +74,20 @@
   });
 
   $("form#buscar").submit(function () {
-    function formatdate(date, format) {
-      if (format == 'short') {
+    function date_short(date) {
         var months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Deciembre"]
         var month = parseInt(date.toISOString().substr(5, 2), 10);
         var day = parseInt(date.toISOString().substr(8, 2), 10);
         return months[month-1].substr(0, 3) + ' ' + day;
-      }
-      else if (format == 'date') {
+    }
+    function date_date(date) {
         return date.toISOString().substr( 0, 10 );
-      }
-      else {
-        return date.toISOString();
-      }
+    }
+    function date_range(from, to) {
+      return from.toISOString().substr(0, 10) + "-" + to.toISOString().substr(0, 10);
     }
 
-    var days = 1;
+    var days = 7;
     var days_before =  Math.floor( days/2 );
 
     $('#resultado').html('');
@@ -105,7 +103,7 @@
         row.append(div);
         for (j = 0 ; j < days ; j++ , from.setDate(from.getDate() + 1) ) {
           var div = $('<div class="span1"></div>');
-          div.text(formatdate(from, 'short'));
+          div.text(date_short(from));
           row.append(div);
         }
         $('#resultado').append(row);
@@ -114,24 +112,36 @@
       from.setDate(from.getDate() - days_before);
       $('#resultado').append('<div class="row" id="' + to.toISOString().substr(0, 10) + '"></div>' );
       var div = $('<div class="span1"></div>');
-      div.text(formatdate(to, 'short'));
+      div.text(date_short(to));
       $('#' + to.toISOString().substr(0, 10)).append(div);
       for (j = 0 ; j < days ; j++ , from.setDate(from.getDate() + 1) ) {
         if (to >= from) {
-          var div = $('<div class="span1" id="' + from.toISOString().substr(0, 10) + "-" + to.toISOString().substr(0, 10) + '">&nbsp;</div>');
+          var div = $('<div class="span1" id="' + date_range(from, to) + '">&nbsp;</div>');
           div.addClass('ui-autocomplete-loading');
-          $('#' + to.toISOString().substr(0, 10)).append(div);
-          var url = "http://www.despegar.com.ar/shop/flights/data/search/roundtrip/" + $("#origen_id").val() + "/" + $("#destino_id").val() + "/" + formatdate(from, 'date') + "/" + formatdate(to, 'date') + "/1/0/0/FARE/ASCENDING/NA/NA/NA/NA/NA";
-          console.log("http://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20json%20where%20url%3D'" + encodeURIComponent(url) + "'&format=json");
-          $.ajax({
-            url: "http://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20json%20where%20url%3D'" + encodeURIComponent(url) + "'&format=json",
-            dataType: "jsonp",
-            success: function( data ) {
-              console.log(data);
-              div.removeClass('ui-autocomplete-loading');
-            }
-          });
-          console.log(from.toISOString().substr(0, 10) + "-" + to.toISOString().substr(0, 10));
+          $('#' + date_date(to)).append(div);
+          var url = "http://www.despegar.com.ar/shop/flights/data/search/roundtrip/" + $("#origen_id").val() + "/" + $("#destino_id").val() + "/" + date_date(from) + "/" + date_date(to) + "/1/0/0/FARE/ASCENDING/NA/NA/NA/NA/NA";
+          url = "http://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20json%20where%20url%3D'" + encodeURIComponent(url) + "'&format=json";
+          var retry = 5;
+          function getFlights(url, from, to, retry) {
+            $.ajax({
+              from_str: from,
+              to_str: to,
+              url: url,
+              dataType: "jsonp",
+              success: function( data ) {
+                console.log(data);
+                if ( retry-- && data.query.count == 0 ) {
+                  console.log('retrying...');
+                  getFlights(url, from, to, retry);
+                }
+                else {
+                  var despegar_url = "http://www.despegar.com.ar/shop/flights/results/roundtrip/" + $("#origen_id").val() + "/" + $("#destino_id").val() + "/" + this.from_str + "/" + this.to_str + "/1/0/0";
+                  $('#' + this.from_str + '-' + this.to_str).removeClass('ui-autocomplete-loading').html('<a target="_blank" href="' + despegar_url + '">' + data.query.results.json.result.pricesSummary.bestPrice[0].formatted.mask + ' ' + data.query.results.json.result.pricesSummary.bestPrice[0].formatted.amount + '<br/>' + data.query.results.json.result.pricesSummary.bestPrice[1].formatted.mask + ' ' + data.query.results.json.result.pricesSummary.bestPrice[1].formatted.amount + '</a>' );
+                }
+              }
+            });
+          }
+          getFlights(url, date_date(from), date_date(to), retry);
         }
         else {
           var div = $('<div class="span1" id="' + from.toISOString().substr(0, 10) + "-" + to.toISOString().substr(0, 10) + '">X</div>');
