@@ -1,4 +1,36 @@
 (function ($) {
+
+  function isset () {
+      // !No description available for isset. @php.js developers: Please update the function summary text file.
+      //
+      // version: 1109.2015
+      // discuss at: http://phpjs.org/functions/isset
+      // +   original by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
+      // +   improved by: FremyCompany
+      // +   improved by: Onno Marsman
+      // +   improved by: Rafał Kukawski
+      // *     example 1: isset( undefined, true);
+      // *     returns 1: false
+      // *     example 2: isset( 'Kevin van Zonneveld' );
+      // *     returns 2: true
+      var a = arguments,
+          l = a.length,
+          i = 0,
+          undef;
+
+      if (l === 0) {
+          throw new Error('Empty isset');
+      }
+
+      while (i !== l) {
+          if (a[i] === undef || a[i] === null) {
+              return false;
+          }
+          i++;
+      }
+      return true;
+  }
+
   $(document).ready(function() {
     var cache = {};
     $("input#origen,input#destino").autocomplete({
@@ -119,10 +151,9 @@
           var div = $('<div class="span1" id="' + date_range(from, to) + '">&nbsp;</div>');
           div.addClass('ui-autocomplete-loading');
           $('#' + date_date(to)).append(div);
-          var url = "http://www.despegar.com.ar/shop/flights/data/search/roundtrip/" + $("#origen_id").val() + "/" + $("#destino_id").val() + "/" + date_date(from) + "/" + date_date(to) + "/1/0/0/FARE/ASCENDING/NA/NA/NA/NA/NA";
-          url = "http://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20json%20where%20url%3D'" + encodeURIComponent(url) + "'&format=json";
-          var retry = 5;
-          function getFlights(url, from, to, retry) {
+          function getFlightsDespegar(from, to, retry) {
+            var url = "http://www.despegar.com.ar/shop/flights/data/search/roundtrip/" + $("#origen_id").val() + "/" + $("#destino_id").val() + "/" + from + "/" + to + "/1/0/0/FARE/ASCENDING/NA/NA/NA/NA/NA";
+            url = "http://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20json%20where%20url%3D'" + encodeURIComponent(url) + "'&format=json";
             $.ajax({
               from_str: from,
               to_str: to,
@@ -132,16 +163,75 @@
                 console.log(data);
                 if ( retry-- && data.query.count == 0 ) {
                   console.log('retrying...');
-                  getFlights(url, from, to, retry);
+                  getFlightsDespegar(from, to, retry);
                 }
                 else {
-                  var despegar_url = "http://www.despegar.com.ar/shop/flights/results/roundtrip/" + $("#origen_id").val() + "/" + $("#destino_id").val() + "/" + this.from_str + "/" + this.to_str + "/1/0/0";
-                  $('#' + this.from_str + '-' + this.to_str).removeClass('ui-autocomplete-loading').html('<a target="_blank" href="' + despegar_url + '">' + data.query.results.json.result.pricesSummary.bestPrice[0].formatted.mask + ' ' + data.query.results.json.result.pricesSummary.bestPrice[0].formatted.amount + '<br/>' + data.query.results.json.result.pricesSummary.bestPrice[1].formatted.mask + ' ' + data.query.results.json.result.pricesSummary.bestPrice[1].formatted.amount + '</a>' );
+                  if (data.query.count == 0) {
+                    $('#' + this.from_str + '-' + this.to_str).removeClass('ui-autocomplete-loading').html( 'Error' );
+                    return;
+                  }
+                  
+                  var link_url = "http://www.despegar.com.ar/shop/flights/results/roundtrip/" + $("#origen_id").val() + "/" + $("#destino_id").val() + "/" + this.from_str + "/" + this.to_str + "/1/0/0";
+                  $('#' + this.from_str + '-' + this.to_str).removeClass('ui-autocomplete-loading').html('<a target="_blank" href="' + link_url + '">' + data.query.results.json.result.pricesSummary.bestPrice[0].formatted.mask + ' ' + data.query.results.json.result.pricesSummary.bestPrice[0].formatted.amount + '<br/>' + data.query.results.json.result.pricesSummary.bestPrice[1].formatted.mask + ' ' + data.query.results.json.result.pricesSummary.bestPrice[1].formatted.amount + '</a>' );
                 }
               }
             });
           }
-          getFlights(url, date_date(from), date_date(to), retry);
+
+          function getFlightsAeroMexico(from, to, retry) {
+            var url = "http://ar.aeromexico.com/Flights.Services/Flights/Flights.svc/ClusteredFlights/" + $("#origen_id").val() + "/" + $("#destino_id").val() + "/" + from + "/" + to + "/1/0/0";
+            url = "http://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20json%20where%20url%3D'" + encodeURIComponent(url) + "'&format=json&diagnostics=true";
+            $.ajax({
+              from_str: from,
+              to_str: to,
+              url: url,
+              dataType: "jsonp",
+              success: function( data ) {
+                console.log(data);
+                if ( retry-- && data.query.count == 0 ) {
+                  console.log('retrying...');
+                  getFlightsAeroMexico(from, to, retry);
+                }
+                else {
+                  if (data.query.count == 0) {
+                    $('#' + this.from_str + '-' + this.to_str).removeClass('ui-autocomplete-loading').html( 'Error' );
+                    return;
+                  }
+
+                  if (!isset(data.query.results.json.Boxs)) {
+                    $('#' + this.from_str + '-' + this.to_str).removeClass('ui-autocomplete-loading').html( '-' );
+                    return;
+                  }
+                  
+                  var link_url = "http://ar.aeromexico.com/search/flights/RoundTrip/" + $("#origen_id").val() + "/" + $("#destino_id").val() + "/" + this.from_str + "/" + this.to_str + "/1/0/0";
+
+                  if ($.isArray(data.query.results.json.Boxs)) {
+                    price = data.query.results.json.Boxs[0];
+                  }
+                  else {
+                    price = data.query.results.json.Boxs;
+                  }
+
+                  if ($.isArray(price.Itns)) {
+                    price = price.Itns[0];
+                  }
+                  else {
+                    price = price.Itns;
+                  }
+
+                  $('#' + this.from_str + '-' + this.to_str).removeClass('ui-autocomplete-loading').html('<a target="_blank" href="' + link_url + '">' + '$ ' + Math.ceil(price.OTot.Loc) + '<br/>' + 'U$S ' + Math.ceil(price.OTot.NonLoc) + '</a>' );
+                }
+              }
+            });
+          }
+
+          if ($('#motor').val() == 'despegar') {
+            getFlightsDespegar(date_date(from), date_date(to), 5);
+          }
+          if ($('#motor').val() == 'aeromexico') {
+            getFlightsAeroMexico(date_date(from), date_date(to), 5);
+          }
+
         }
         else {
           var div = $('<div class="span1" id="' + from.toISOString().substr(0, 10) + "-" + to.toISOString().substr(0, 10) + '">X</div>');
