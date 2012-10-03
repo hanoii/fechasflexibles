@@ -1,18 +1,6 @@
 (function ($) {
 
   function isset () {
-      // !No description available for isset. @php.js developers: Please update the function summary text file.
-      //
-      // version: 1109.2015
-      // discuss at: http://phpjs.org/functions/isset
-      // +   original by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
-      // +   improved by: FremyCompany
-      // +   improved by: Onno Marsman
-      // +   improved by: Rafał Kukawski
-      // *     example 1: isset( undefined, true);
-      // *     returns 1: false
-      // *     example 2: isset( 'Kevin van Zonneveld' );
-      // *     returns 2: true
       var a = arguments,
           l = a.length,
           i = 0,
@@ -37,7 +25,8 @@
       source: function( request, response ) {
         function filter(data, term) {
           return $.map(data, function( item ) {
-            if (item.label.search(new RegExp(term.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'i')) != -1) {
+            console.log(term.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'i');
+            if (item.desc.search(new RegExp(term.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'i')) != -1 || item.label.search(new RegExp(term.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'i')) != -1) {
               return item;
             }
           });
@@ -64,7 +53,8 @@
               return {
                 label: item.n + " (" + item.m + ")",
                 //value: item.m,
-                id: item.m
+                id: item.m,
+                desc: item.a
               }
             });
             response( filter(cache[ term3 ], term) );
@@ -108,9 +98,8 @@
   $("form#buscar").submit(function () {
     function date_short(date) {
         var months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Deciembre"]
-        var month = parseInt(date.toISOString().substr(5, 2), 10);
-        var day = parseInt(date.toISOString().substr(8, 2), 10);
-        return months[month-1].substr(0, 3) + ' ' + day;
+        var days = ["Dom", "Lun", "Mar", "Mie", "Jue", "Vie", "Sab"];
+        return days[date.getUTCDay()] + '<br/>' + months[date.getUTCMonth()].substr(0, 3) + ' ' + date.getUTCDate();
     }
     function date_date(date) {
         return date.toISOString().substr( 0, 10 );
@@ -131,11 +120,11 @@
         var from = new Date($("input#fecha_origen").val());
         from.setDate(from.getDate() - days_before);
         var row = $('<div class="row"></div>');
-        var div = $('<div class="span1"><p align="right">Ir</p><p>Volver</p></div>');
+        var div = $('<div class="span1 result">&nbsp;</div>');
         row.append(div);
         for (j = 0 ; j < days ; j++ , from.setDate(from.getDate() + 1) ) {
           var div = $('<div class="span1 result"></div>');
-          div.text(date_short(from));
+          div.html(date_short(from));
           row.append(div);
         }
         $('#resultado').append(row);
@@ -144,7 +133,7 @@
       from.setDate(from.getDate() - days_before);
       $('#resultado').append('<div class="row" id="' + to.toISOString().substr(0, 10) + '"></div>' );
       var div = $('<div class="span1 result"></div>');
-      div.text(date_short(to));
+      div.html(date_short(to));
       $('#' + to.toISOString().substr(0, 10)).append(div);
       for (j = 0 ; j < days ; j++ , from.setDate(from.getDate() + 1) ) {
         if (to >= from) {
@@ -152,7 +141,7 @@
           div.addClass('ui-autocomplete-loading');
           $('#' + date_date(to)).append(div);
           function getFlightsDespegar(from, to, retry) {
-            var url = "http://www.despegar.com.ar/shop/flights/data/search/roundtrip/" + $("#origen_id").val() + "/" + $("#destino_id").val() + "/" + from + "/" + to + "/1/0/0/FARE/ASCENDING/NA/NA/NA/NA/NA";
+            var url = "http://www.despegar.com.ar/shop/flights/data/search/roundtrip/" + $("#origen_id").val() + "/" + $("#destino_id").val() + "/" + from + "/" + to + "/1/0/0/TOTALFARE/ASCENDING/TOTALFARE/NA/NA/NA/" + $('#escalas').val() +"/NA";
             url = "http://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20json%20where%20url%3D'" + encodeURIComponent(url) + "'&format=json";
             $.ajax({
               from_str: from,
@@ -163,10 +152,10 @@
                 console.log(data);
                 if ( retry-- && data.query.count == 0 ) {
                   console.log('retrying...');
-                  getFlightsDespegar(from, to, retry);
+                  setTimeout(function() { getFlightsDespegar(from, to, retry) }, 2000);
                 }
                 else {
-                  var link_url = "http://www.despegar.com.ar/shop/flights/results/roundtrip/" + $("#origen_id").val() + "/" + $("#destino_id").val() + "/" + this.from_str + "/" + this.to_str + "/1/0/0";
+                  var link_url = "http://www.despegar.com.ar/shop/flights/results/roundtrip/" + $("#origen_id").val() + "/" + $("#destino_id").val() + "/" + this.from_str + "/" + this.to_str + "/1/0/0/NA/NA/NA/" + $('#escalas').val() +"/NA";
 
                   if (data.query.count == 0) {
                     $('#' + this.from_str + '-' + this.to_str).removeClass('ui-autocomplete-loading').html('<a target="_blank" href="' + link_url + '">Error</a>' );
@@ -201,7 +190,7 @@
                 console.log(data);
                 if ( retry-- && data.query.count == 0 ) {
                   console.log('retrying...');
-                  getFlightsAeroMexico(from, to, retry);
+                  setTimeout(function() { getFlightsAeroMexico(from, to, retry); }, 2000);
                 }
                 else {
                   var link_url = "http://ar.aeromexico.com/search/flights/RoundTrip/" + $("#origen_id").val() + "/" + $("#destino_id").val() + "/" + this.from_str + "/" + this.to_str + "/1/0/0";

@@ -68,10 +68,18 @@
                             <input id="destino_id" type="hidden" value="MIA">
                           </div>
                           <div class="row">
-                            <input class="fecha span6" id="fecha_origen" type="text" placeholder="Fecha origen" value="2012-10-01">
-                            <input class ="fecha span6" id="fecha_destino" type="text" placeholder="Fecha destino" value="2012-11-01">
+                            <input class="fecha span6" id="fecha_origen" type="text" placeholder="Fecha origen" value="2012-11-03">
+                            <input class ="fecha span6" id="fecha_destino" type="text" placeholder="Fecha destino" value="2012-11-10">
                           </div>
                           <div class="row">
+                            <select id="escalas">
+                              <option value="NA">Sin preferencia de escalas</option>
+                              <option value="0">Vuelos directos</option>
+                              <option value="1">Hasta 1 escala</option>
+                              <option value="2">Hasta 2 escalas</option>
+                              <option value="3">Hasta 3 escalas</option>
+                            </select>
+                          </div>                          <div class="row">
                             <button type="submit" class="btn">Buscar</button>
                           </div>
                         </form>
