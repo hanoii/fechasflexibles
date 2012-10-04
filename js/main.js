@@ -1,5 +1,11 @@
 (function ($) {
 
+  if (typeof console == "undefined") {
+    window.console = {
+        log: function () {}
+    };
+  }
+
   function isset () {
       var a = arguments,
           l = a.length,
