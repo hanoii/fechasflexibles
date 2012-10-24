@@ -31,7 +31,6 @@
       source: function( request, response ) {
         function filter(data, term) {
           return $.map(data, function( item ) {
-            console.log(term.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'i');
             if (item.desc.search(new RegExp(term.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'i')) != -1 || item.label.search(new RegExp(term.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'i')) != -1) {
               return item;
             }
@@ -58,7 +57,6 @@
             cache[ term3 ] = $.map( items, function( item ) {
               return {
                 label: item.n + " (" + item.m + ")",
-                //value: item.m,
                 id: item.m,
                 desc: item.a
               }
@@ -125,8 +123,8 @@
       if (i == 0) {
         var from = new Date($("input#fecha_origen").val());
         from.setDate(from.getDate() - days_before);
-        var row = $('<div class="row"></div>');
-        var div = $('<div class="span1 result">&nbsp;</div>');
+        var row = $('<div class="row hidden-phone"></div>');
+        var div = $('<div class="offset2 span1 result">&nbsp;</div>');
         row.append(div);
         for (j = 0 ; j < days ; j++ , from.setDate(from.getDate() + 1) ) {
           var div = $('<div class="span1 result"></div>');
@@ -138,7 +136,7 @@
       var from = new Date($("input#fecha_origen").val());
       from.setDate(from.getDate() - days_before);
       $('#resultado').append('<div class="row" id="' + to.toISOString().substr(0, 10) + '"></div>' );
-      var div = $('<div class="span1 result"></div>');
+      var div = $('<div class="offset2 span1 result hidden-phone"></div>');
       div.html(date_short(to));
       $('#' + to.toISOString().substr(0, 10)).append(div);
       for (j = 0 ; j < days ; j++ , from.setDate(from.getDate() + 1) ) {
@@ -147,7 +145,7 @@
           div.addClass('ui-autocomplete-loading');
           $('#' + date_date(to)).append(div);
           function getFlightsDespegar(from, to, retry) {
-            var url = "http://www.despegar.com.ar/shop/flights/data/search/roundtrip/" + $("#origen_id").val() + "/" + $("#destino_id").val() + "/" + from + "/" + to + "/1/0/0/TOTALFARE/ASCENDING/TOTALFARE/NA/NA/NA/" + $('#escalas').val() +"/NA";
+            var url = "http://www.despegar.com.ar/shop/flights/data/search/roundtrip/" + $("#origen_id").val() + "/" + $("#destino_id").val() + "/" + from + "/" + to + "/1/0/0/TOTALFARE/ASCENDING/NA/NA/NA/" + $('#escalas').val() +"/NA";
             url = "http://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20json%20where%20url%3D'" + encodeURIComponent(url) + "'&format=json";
             $.ajax({
               from_str: from,
@@ -155,9 +153,8 @@
               url: url,
               dataType: "jsonp",
               success: function( data ) {
-                console.log(data);
+                // console.log(data);
                 if ( retry-- && data.query.count == 0 ) {
-                  console.log('retrying...');
                   setTimeout(function() { getFlightsDespegar(from, to, retry) }, 2000);
                 }
                 else {
@@ -178,7 +175,44 @@
                     return;
                   }
 
-                  $('#' + this.from_str + '-' + this.to_str).removeClass('ui-autocomplete-loading').html('<a target="_blank" href="' + link_url + '">' + data.query.results.json.result.pricesSummary.bestPrice[0].formatted.mask + ' ' + data.query.results.json.result.pricesSummary.bestPrice[0].formatted.amount + '<br/>' + data.query.results.json.result.pricesSummary.bestPrice[1].formatted.mask + ' ' + data.query.results.json.result.pricesSummary.bestPrice[1].formatted.amount + '</a>' );
+                  $('#' + this.from_str + '-' + this.to_str).removeClass('ui-autocomplete-loading').html('<span class="visible-phone">Ir-Volver: </span><a target="_blank" href="' + link_url + '">' + data.query.results.json.result.pricesSummary.bestPrice[0].formatted.mask + ' ' + data.query.results.json.result.pricesSummary.bestPrice[0].formatted.amount + '<br/>' + data.query.results.json.result.pricesSummary.bestPrice[1].formatted.mask + ' ' + data.query.results.json.result.pricesSummary.bestPrice[1].formatted.amount + '</a>' );
+                }
+              }
+            });
+          }
+
+          function getFlightsDespegarUy(from, to, retry) {
+            var url = "http://www.despegar.com.uy/shop/flights/data/search/roundtrip/" + $("#origen_id").val() + "/" + $("#destino_id").val() + "/" + from + "/" + to + "/1/0/0/TOTALFARE/ASCENDING/NA/NA/NA/" + $('#escalas').val() +"/NA";
+            url = "http://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20json%20where%20url%3D'" + encodeURIComponent(url) + "'&format=json";
+            $.ajax({
+              from_str: from,
+              to_str: to,
+              url: url,
+              dataType: "jsonp",
+              success: function( data ) {
+                console.log(data);
+                if ( retry-- && data.query.count == 0 ) {
+                  setTimeout(function() { getFlightsDespegarUy(from, to, retry) }, 2000);
+                }
+                else {
+                  var link_url = "http://www.despegar.com.uy/shop/flights/results/roundtrip/" + $("#origen_id").val() + "/" + $("#destino_id").val() + "/" + this.from_str + "/" + this.to_str + "/1/0/0/NA/NA/NA/" + $('#escalas').val() +"/NA";
+
+                  if (data.query.count == 0) {
+                    $('#' + this.from_str + '-' + this.to_str).removeClass('ui-autocomplete-loading').html('<a target="_blank" href="' + link_url + '">Error</a>' );
+                    return;
+                  }
+
+                  if (!isset(data.query.results.json.result.metadata)) {
+                    $('#' + this.from_str + '-' + this.to_str).removeClass('ui-autocomplete-loading').html( '' );
+                    return;
+                  }
+
+                  if (data.query.results.json.result.metadata.status.code != "SUCCEEDED" && data.query.results.json.result.metadata.status.code != "SUCCEEDED_RELAXED") {
+                    $('#' + this.from_str + '-' + this.to_str).removeClass('ui-autocomplete-loading').html( '-' );
+                    return;
+                  }
+
+                  $('#' + this.from_str + '-' + this.to_str).removeClass('ui-autocomplete-loading').html('<span class="visible-phone">Ir-Volver: </span><a target="_blank" href="' + link_url + '">' + data.query.results.json.result.pricesSummary.bestPrice.formatted.mask + ' ' + data.query.results.json.result.pricesSummary.bestPrice.formatted.amount + '</a>' );
                 }
               }
             });
@@ -193,9 +227,7 @@
               url: url,
               dataType: "jsonp",
               success: function( data ) {
-                console.log(data);
                 if ( retry-- && data.query.count == 0 ) {
-                  console.log('retrying...');
                   setTimeout(function() { getFlightsAeroMexico(from, to, retry); }, 2000);
                 }
                 else {
@@ -210,7 +242,7 @@
                     $('#' + this.from_str + '-' + this.to_str).removeClass('ui-autocomplete-loading').html( '-' );
                     return;
                   }
-                  
+
                   if ($.isArray(data.query.results.json.Boxs)) {
                     price = data.query.results.json.Boxs[0];
                   }
@@ -225,7 +257,7 @@
                     price = price.Itns;
                   }
 
-                  $('#' + this.from_str + '-' + this.to_str).removeClass('ui-autocomplete-loading').html('<a target="_blank" href="' + link_url + '">' + '$ ' + Math.ceil(price.OTot.Loc) + '<br/>' + 'U$S ' + Math.ceil(price.OTot.NonLoc) + '</a>' );
+                  $('#' + this.from_str + '-' + this.to_str).removeClass('ui-autocomplete-loading').html('<span class="visible-phone">Ir-Volver: </span><a target="_blank" href="' + link_url + '">' + '$ ' + Math.ceil(price.OTot.Loc) + '<br/>' + 'U$S ' + Math.ceil(price.OTot.NonLoc) + '</a>' );
                 }
               }
             });
@@ -233,6 +265,9 @@
 
           if ($('#motor').val() == 'despegar') {
             getFlightsDespegar(date_date(from), date_date(to), 5);
+          }
+          if ($('#motor').val() == 'despegar-uy') {
+            getFlightsDespegarUy(date_date(from), date_date(to), 5);
           }
           if ($('#motor').val() == 'aeromexico') {
             getFlightsAeroMexico(date_date(from), date_date(to), 5);
