@@ -25,8 +25,33 @@
       return true;
   }
 
+  function formatdate(days) {
+    var today = new Date();
+    var d = new Date();
+    d.setDate(today.getDate()+days);
+    var month = d.getMonth() + 1;
+    month = month < 10 ? "0" + month : month;
+    var day = d.getDate() < 10 ? "0" + d.getDate() : d.getDate();
+    return d.getFullYear() + "-" + month + "-" + day;
+  }
+
   $(document).ready(function() {
     var cache = {};
+
+    $("input#fecha_origen").val(formatdate(5));
+    $("input#fecha_destino").val(formatdate(20));
+
+    var origen_value = $.cookie('origen_value');
+    if (origen_value) {
+      $("input#origen").val(origen_value);
+      $("input#origen_id").val($.cookie('origen_id'));
+    }
+    var destino_value = $.cookie('destino_value');
+    if (destino_value) {
+      $("input#destino").val(destino_value);
+      $("input#destino_id").val($.cookie('destino_id'));
+    }
+
     $("input#origen,input#destino").autocomplete({
       source: function( request, response ) {
         function filter(data, term) {
@@ -70,6 +95,14 @@
         if( ui.item ) {
           $(this).val(ui.item.label);
           $('#' + $(this).attr('id') + '_id').val(ui.item.id);
+          if ( $( this ).attr('id') == 'origen' ) {
+            $.cookie('origen_value', ui.item.label);
+            $.cookie('origen_id', ui.item.id);
+          }
+          else {
+            $.cookie('destino_value', ui.item.label);
+            $.cookie('destino_id', ui.item.id);
+          }
         }
         if ( $( this ).attr('id') == 'origen' ) {
           $('#destino').focus();
@@ -153,7 +186,6 @@
               url: url,
               dataType: "jsonp",
               success: function( data ) {
-                // console.log(data);
                 if ( retry-- && data.query.count == 0 ) {
                   setTimeout(function() { getFlightsDespegar(from, to, retry) }, 2000);
                 }
@@ -165,17 +197,17 @@
                     return;
                   }
 
-                  if (!isset(data.query.results.json.result.metadata)) {
-                    $('#' + this.from_str + '-' + this.to_str).removeClass('ui-autocomplete-loading').html( '' );
+                  if (!isset(data.query.results.json.result.data.metadata)) {
+                    $('#' + this.from_str + '-' + this.to_str).removeClass('ui-autocomplete-loading').html('<a target="_blank" href="' + link_url + '">No meta</a>' );
                     return;
                   }
 
-                  if (data.query.results.json.result.metadata.status.code != "SUCCEEDED" && data.query.results.json.result.metadata.status.code != "SUCCEEDED_RELAXED") {
-                    $('#' + this.from_str + '-' + this.to_str).removeClass('ui-autocomplete-loading').html( '-' );
+                  if (data.query.results.json.result.data.metadata.status.code != "SUCCEEDED" && data.query.results.json.result.data.metadata.status.code != "SUCCEEDED_RELAXED") {
+                    $('#' + this.from_str + '-' + this.to_str).removeClass('ui-autocomplete-loading').html('<a target="_blank" href="' + link_url + '">Not succeeded</a>' );
                     return;
                   }
 
-                  $('#' + this.from_str + '-' + this.to_str).removeClass('ui-autocomplete-loading').html('<span class="visible-phone">Ir-Volver: </span><a target="_blank" href="' + link_url + '">' + data.query.results.json.result.pricesSummary.bestPrice[0].formatted.mask + ' ' + data.query.results.json.result.pricesSummary.bestPrice[0].formatted.amount + '<br/>' + data.query.results.json.result.pricesSummary.bestPrice[1].formatted.mask + ' ' + data.query.results.json.result.pricesSummary.bestPrice[1].formatted.amount + '</a>' );
+                  $('#' + this.from_str + '-' + this.to_str).removeClass('ui-autocomplete-loading').html('<span class="visible-phone">Ir-Volver: </span><a target="_blank" href="' + link_url + '">' + data.query.results.json.result.data.pricesSummary.bestPrice[0].formatted.mask + ' ' + data.query.results.json.result.data.pricesSummary.bestPrice[0].formatted.amount + '<br/>' + data.query.results.json.result.data.pricesSummary.bestPrice[1].formatted.mask + ' ' + data.query.results.json.result.data.pricesSummary.bestPrice[1].formatted.amount + '</a>' );
                 }
               }
             });
@@ -190,7 +222,6 @@
               url: url,
               dataType: "jsonp",
               success: function( data ) {
-                console.log(data);
                 if ( retry-- && data.query.count == 0 ) {
                   setTimeout(function() { getFlightsDespegarUy(from, to, retry) }, 2000);
                 }
@@ -202,17 +233,17 @@
                     return;
                   }
 
-                  if (!isset(data.query.results.json.result.metadata)) {
+                  if (!isset(data.query.results.json.result.data.metadata)) {
                     $('#' + this.from_str + '-' + this.to_str).removeClass('ui-autocomplete-loading').html( '' );
                     return;
                   }
 
-                  if (data.query.results.json.result.metadata.status.code != "SUCCEEDED" && data.query.results.json.result.metadata.status.code != "SUCCEEDED_RELAXED") {
+                  if (data.query.results.json.result.data.metadata.status.code != "SUCCEEDED" && data.query.results.json.result.data.metadata.status.code != "SUCCEEDED_RELAXED") {
                     $('#' + this.from_str + '-' + this.to_str).removeClass('ui-autocomplete-loading').html( '-' );
                     return;
                   }
 
-                  $('#' + this.from_str + '-' + this.to_str).removeClass('ui-autocomplete-loading').html('<span class="visible-phone">Ir-Volver: </span><a target="_blank" href="' + link_url + '">' + data.query.results.json.result.pricesSummary.bestPrice.formatted.mask + ' ' + data.query.results.json.result.pricesSummary.bestPrice.formatted.amount + '</a>' );
+                  $('#' + this.from_str + '-' + this.to_str).removeClass('ui-autocomplete-loading').html('<span class="visible-phone">Ir-Volver: </span><a target="_blank" href="' + link_url + '">' + data.query.results.json.result.data.pricesSummary.bestPrice.formatted.mask + ' ' + data.query.results.json.result.data.pricesSummary.bestPrice.formatted.amount + '</a>' );
                 }
               }
             });
